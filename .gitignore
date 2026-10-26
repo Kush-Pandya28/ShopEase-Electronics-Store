@@ -1,0 +1,25 @@
+node_modules/
+dist/
+build/
+coverage/
+logs/
+*.log
+.env
+.env.local
+.env.*.local
+!.env.example
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+server/.data/
+server/uploads/
+logs/
+
+# Cloudflare Tunnel binary (downloaded by start-public-link.ps1)
+tools/
+
+# Local Claude Code settings
+.claude/

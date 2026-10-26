@@ -1,0 +1,310 @@
+{
+  "info": {
+    "name": "ShopEase API",
+    "description": "ShopEase electronics store REST API. Run Auth > Login first - the test script stores the access token in {{token}}.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api" },
+    { "key": "token", "value": "" },
+    { "key": "adminEmail", "value": "admin@shopease.com" },
+    { "key": "adminPassword", "value": "set-your-admin-password" },
+    { "key": "productId", "value": "" },
+    { "key": "productSlug", "value": "apple-iphone-15-128-gb" },
+    { "key": "orderId", "value": "" },
+    { "key": "addressId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/register",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"phone\": \"9876543210\",\n  \"password\": \"Password1\"\n}" }
+          }
+        },
+        {
+          "name": "Login (customer)",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('token', pm.response.json().accessToken);"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"customer@shopease.com\",\n  \"password\": \"Customer@123\"\n}" }
+          }
+        },
+        {
+          "name": "Login (admin)",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.collectionVariables.set('token', pm.response.json().accessToken);"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}" }
+          }
+        },
+        { "name": "Refresh token", "request": { "method": "POST", "url": "{{baseUrl}}/auth/refresh-token" } },
+        { "name": "Logout", "request": { "method": "POST", "url": "{{baseUrl}}/auth/logout" } },
+        {
+          "name": "Forgot password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/forgot-password",
+            "body": { "mode": "raw", "raw": "{ \"email\": \"customer@shopease.com\" }" }
+          }
+        },
+        {
+          "name": "Reset password",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/reset-password/<token-from-email>",
+            "body": { "mode": "raw", "raw": "{ \"password\": \"NewPass123\" }" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "List / search / filter",
+          "event": [{ "listen": "test", "script": { "exec": ["const p = pm.response.json().products[0]; if (p) pm.collectionVariables.set('productId', p._id);"] } }],
+          "request": { "method": "GET", "url": "{{baseUrl}}/products?category=mobiles&brand=apple,samsung&minPrice=20000&ram=8 GB&sort=price_asc&page=1&limit=12" }
+        },
+        { "name": "Filter options", "request": { "method": "GET", "url": "{{baseUrl}}/products/filters?category=mobiles" } },
+        { "name": "Search suggestions", "request": { "method": "GET", "url": "{{baseUrl}}/products/suggest?q=iph" } },
+        { "name": "Featured", "request": { "method": "GET", "url": "{{baseUrl}}/products/featured" } },
+        { "name": "New arrivals", "request": { "method": "GET", "url": "{{baseUrl}}/products/new" } },
+        { "name": "Deals", "request": { "method": "GET", "url": "{{baseUrl}}/products/deals" } },
+        { "name": "By slug", "request": { "method": "GET", "url": "{{baseUrl}}/products/{{productSlug}}" } },
+        { "name": "Related", "request": { "method": "GET", "url": "{{baseUrl}}/products/{{productId}}/related" } },
+        {
+          "name": "Compare",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/products/compare",
+            "body": { "mode": "raw", "raw": "{ \"ids\": [\"<id1>\", \"<id2>\"] }" }
+          }
+        },
+        {
+          "name": "Create (admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/products",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Demo Phone\",\n  \"brand\": \"<brandId>\",\n  \"category\": \"<categoryId>\",\n  \"images\": [{ \"url\": \"https://placehold.co/600\" }],\n  \"variants\": [{ \"sku\": \"DEMO-1\", \"color\": \"Black\", \"ram\": \"8 GB\", \"storage\": \"128 GB\", \"price\": 19999, \"mrp\": 24999, \"stock\": 10 }],\n  \"specifications\": [{ \"group\": \"Display\", \"key\": \"Screen Size\", \"value\": \"6.5 inch\" }]\n}"
+            }
+          }
+        },
+        {
+          "name": "Update (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/products/{{productId}}",
+            "body": { "mode": "raw", "raw": "{ \"isFeatured\": true }" }
+          }
+        },
+        { "name": "Delete (admin)", "request": { "method": "DELETE", "url": "{{baseUrl}}/products/{{productId}}" } }
+      ]
+    },
+    {
+      "name": "Catalog",
+      "item": [
+        { "name": "Categories", "request": { "method": "GET", "url": "{{baseUrl}}/categories" } },
+        { "name": "Brands", "request": { "method": "GET", "url": "{{baseUrl}}/brands" } },
+        { "name": "Banners", "request": { "method": "GET", "url": "{{baseUrl}}/banners" } },
+        {
+          "name": "Create category (admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/categories",
+            "body": { "mode": "raw", "raw": "{ \"name\": \"Drones\", \"icon\": \"camera\" }" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "Me",
+          "event": [{ "listen": "test", "script": { "exec": ["const a = pm.response.json().user.addresses[0]; if (a) pm.collectionVariables.set('addressId', a._id);"] } }],
+          "request": { "method": "GET", "url": "{{baseUrl}}/users/me" }
+        },
+        {
+          "name": "Update profile",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/users/me",
+            "body": { "mode": "raw", "raw": "{ \"name\": \"Riya P.\" }" }
+          }
+        },
+        {
+          "name": "Add address",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/users/me/addresses",
+            "body": { "mode": "raw", "raw": "{\n  \"fullName\": \"Riya Patel\",\n  \"phone\": \"9123456780\",\n  \"street\": \"12 CG Road\",\n  \"city\": \"Ahmedabad\",\n  \"state\": \"Gujarat\",\n  \"pincode\": \"380009\"\n}" }
+          }
+        },
+        { "name": "Wishlist", "request": { "method": "GET", "url": "{{baseUrl}}/users/me/wishlist" } },
+        {
+          "name": "Add to wishlist",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/users/me/wishlist",
+            "body": { "mode": "raw", "raw": "{ \"productId\": \"{{productId}}\" }" }
+          }
+        },
+        { "name": "All users (admin)", "request": { "method": "GET", "url": "{{baseUrl}}/users?page=1" } }
+      ]
+    },
+    {
+      "name": "Cart",
+      "item": [
+        { "name": "Get cart", "request": { "method": "GET", "url": "{{baseUrl}}/cart" } },
+        {
+          "name": "Add item",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/cart/items",
+            "body": { "mode": "raw", "raw": "{ \"productId\": \"{{productId}}\", \"variantSku\": \"<sku>\", \"quantity\": 1 }" }
+          }
+        },
+        {
+          "name": "Apply coupon",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/cart/coupon",
+            "body": { "mode": "raw", "raw": "{ \"code\": \"WELCOME10\" }" }
+          }
+        },
+        {
+          "name": "Merge guest cart",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/cart/merge",
+            "body": { "mode": "raw", "raw": "{ \"items\": [{ \"productId\": \"{{productId}}\", \"variantSku\": \"<sku>\", \"quantity\": 1 }] }" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders & payments",
+      "item": [
+        {
+          "name": "Place COD order",
+          "event": [{ "listen": "test", "script": { "exec": ["const o = pm.response.json().order; if (o) pm.collectionVariables.set('orderId', o._id);"] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/orders",
+            "body": { "mode": "raw", "raw": "{ \"addressId\": \"{{addressId}}\", \"paymentMethod\": \"cod\" }" }
+          }
+        },
+        {
+          "name": "Create Razorpay order",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/payments/create-order",
+            "body": { "mode": "raw", "raw": "{ \"addressId\": \"{{addressId}}\" }" }
+          }
+        },
+        {
+          "name": "Verify payment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/payments/verify",
+            "body": { "mode": "raw", "raw": "{\n  \"razorpay_order_id\": \"order_xxx\",\n  \"razorpay_payment_id\": \"pay_xxx\",\n  \"razorpay_signature\": \"sig\",\n  \"addressId\": \"{{addressId}}\"\n}" }
+          }
+        },
+        { "name": "My orders", "request": { "method": "GET", "url": "{{baseUrl}}/orders/my" } },
+        { "name": "Order by id", "request": { "method": "GET", "url": "{{baseUrl}}/orders/{{orderId}}" } },
+        { "name": "Invoice PDF", "request": { "method": "GET", "url": "{{baseUrl}}/orders/{{orderId}}/invoice" } },
+        {
+          "name": "Cancel order",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/orders/{{orderId}}/cancel",
+            "body": { "mode": "raw", "raw": "{ \"reason\": \"Ordered by mistake\" }" }
+          }
+        },
+        {
+          "name": "Return request",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/orders/{{orderId}}/return",
+            "body": { "mode": "raw", "raw": "{ \"type\": \"replace\", \"reason\": \"Screen has dead pixels on arrival\" }" }
+          }
+        },
+        { "name": "All orders (admin)", "request": { "method": "GET", "url": "{{baseUrl}}/orders?status=placed" } },
+        {
+          "name": "Update status (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/orders/{{orderId}}/status",
+            "body": { "mode": "raw", "raw": "{ \"status\": \"shipped\", \"courier\": \"Delhivery\", \"trackingId\": \"DLV123\" }" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reviews & coupons",
+      "item": [
+        { "name": "Product reviews", "request": { "method": "GET", "url": "{{baseUrl}}/reviews/product/{{productId}}" } },
+        {
+          "name": "Create review (verified buyer)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/reviews/product/{{productId}}",
+            "body": { "mode": "raw", "raw": "{ \"rating\": 5, \"title\": \"Great\", \"comment\": \"Loved it\" }" }
+          }
+        },
+        { "name": "Available coupons", "request": { "method": "GET", "url": "{{baseUrl}}/coupons/available" } },
+        {
+          "name": "Create coupon (admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/coupons",
+            "body": { "mode": "raw", "raw": "{ \"code\": \"DIWALI20\", \"type\": \"percent\", \"value\": 20, \"maxDiscount\": 3000, \"minOrderValue\": 2000, \"expiresAt\": \"2027-12-31\" }" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        { "name": "Stats", "request": { "method": "GET", "url": "{{baseUrl}}/admin/stats?period=monthly" } },
+        { "name": "Sales report CSV", "request": { "method": "GET", "url": "{{baseUrl}}/admin/sales-report?from=2026-01-01&to=2026-12-31" } }
+      ]
+    }
+  ]
+}

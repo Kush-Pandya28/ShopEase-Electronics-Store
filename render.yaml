@@ -1,0 +1,47 @@
+# Render Blueprint - deploys ShopEase as ONE web service (website + API on the same https address),
+# so it keeps working when your own computer is off or asleep.
+# Render dashboard > New > Blueprint > pick this repository. You will be asked for the 4 values marked sync: false.
+# Optional extras can be added later in Render > shopease > Environment:
+#   SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASS  - real emails (Gmail: smtp.gmail.com, 587, address, App Password)
+#   CLOUDINARY_CLOUD_NAME / _API_KEY / _API_SECRET - keep images uploaded from the admin panel
+#   RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET          - online payments (Cash on Delivery works without them)
+services:
+  - type: web
+    name: shopease
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm run render-build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20"
+      # MongoDB Atlas connection string, e.g. mongodb+srv://user:pass@cluster0.xxxx.mongodb.net/shopease
+      - key: MONGO_URI
+        sync: false
+      # Admin login created on start-up (password: 8+ characters)
+      - key: ADMIN_NAME
+        sync: false
+      - key: ADMIN_LOGIN_EMAIL
+        sync: false
+      - key: ADMIN_LOGIN_PASSWORD
+        sync: false
+      # Loads the 105 sample products the first time the (empty) cloud database is used
+      - key: SEED_ON_EMPTY
+        value: "true"
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_EXPIRE
+        value: 15m
+      - key: JWT_REFRESH_EXPIRE
+        value: 7d
+      - key: EMAIL_FROM
+        value: ShopEase <no-reply@shopease.com>
+      - key: LOW_STOCK_THRESHOLD
+        value: "5"
